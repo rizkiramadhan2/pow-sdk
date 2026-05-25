@@ -24,4 +24,4 @@ tmp_dir = "tmp"
   runner = "green"
 
 [misc]
-  clean_on_exit = true
+  clean_on_exit = tru
