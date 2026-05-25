@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: rbac-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rbac
+    ports:
+      - "5454:5454"
+    volumes:
+      - rbac_postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rbac"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rbac_network
+
+  rbac:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: rbac-service-dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/rbac?sslmode=disable
+      PORT: 10010
+      RBAC_SECRET: super-secret-key
+      RBAC_AUTO_MIGRATE: "true"
+    ports:
+      - "10010:10010"
+    volumes:
+      - .:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    networks:
+      - rbac_network
+
+volumes:
+  rbac_postgres_dev_data:
+  go_mod_cache:
+  go_build_cache:
+
+networks:
+  rbac_network:
+    driver: bridge
